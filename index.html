@@ -347,6 +347,9 @@ tbody tr.clickable{cursor:pointer}
       <button class="criteria-btn" id="cb-absent" onclick="toggleCriteria('absent')">
         Zero entry whole month <span class="cb-count" id="cnt-absent">—</span>
       </button>
+      <button class="criteria-btn" id="cb-anyabs" onclick="toggleCriteria('anyabs')">
+        Absent in month <span class="cb-count" id="cnt-anyabs">—</span>
+      </button>
       <button class="criteria-btn" id="cb-late" onclick="toggleCriteria('late')">
         Has late arrivals <span class="cb-count" id="cnt-late">—</span>
       </button>
@@ -357,9 +360,10 @@ tbody tr.clickable{cursor:pointer}
 
     <div class="sidebar-section">
       <div class="section-label">Analysis View</div>
-      <div style="display:flex;gap:6px;margin-bottom:8px">
-        <button class="criteria-btn" id="cb-ontime" onclick="toggleAnalysisView('ontime')" style="flex:1;justify-content:center;gap:4px">✅ On Time <span class="cb-count" id="cnt-ontime">—</span></button>
-        <button class="criteria-btn" id="cb-lateview" onclick="toggleAnalysisView('lateview')" style="flex:1;justify-content:center;gap:4px">⚠️ Late <span class="cb-count" id="cnt-lateview">—</span></button>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <button class="criteria-btn" id="cb-ontime" onclick="toggleAnalysisView('ontime')" style="flex:1;justify-content:center;gap:3px;font-size:11px;padding:6px 4px">✅ On Time <span class="cb-count" id="cnt-ontime">—</span></button>
+        <button class="criteria-btn" id="cb-lateview" onclick="toggleAnalysisView('lateview')" style="flex:1;justify-content:center;gap:3px;font-size:11px;padding:6px 4px">⚠️ Late <span class="cb-count" id="cnt-lateview">—</span></button>
+        <button class="criteria-btn" id="cb-absview" onclick="toggleAnalysisView('absview')" style="flex:1;justify-content:center;gap:3px;font-size:11px;padding:6px 4px">❌ ABS <span class="cb-count" id="cnt-absview">—</span></button>
       </div>
       <div id="av-ontime-params" style="display:none">
         <div class="filter-group" style="margin-bottom:6px">
@@ -380,6 +384,14 @@ tbody tr.clickable{cursor:pointer}
           <label>Out before / Early Exit (leave blank to ignore)</label>
           <input type="time" id="av-late-out" oninput="updateAnalysisView()">
         </div>
+      </div>
+      <div id="av-abs-params" style="display:none">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">
+          Filtered to employees with absences in whole month.
+        </div>
+        <button class="tb-btn red" onclick="switchTab('absent')" style="width:100%;justify-content:center;padding:6px 8px;font-size:11px;cursor:pointer">
+          📊 Open Full ABS Report
+        </button>
       </div>
     </div>
 
@@ -453,13 +465,14 @@ tbody tr.clickable{cursor:pointer}
         <div class="kpi amber"><div class="kpi-label" id="kpi-label-late">Late Arrivals</div><div class="kpi-val" id="k-late">—</div><div class="kpi-sub" id="k-late-sub">employees</div></div>
         <div class="kpi teal"><div class="kpi-label" id="kpi-label-e1">Left &lt;17:30</div><div class="kpi-val" id="k-b1730">—</div><div class="kpi-sub" id="k-b1730-sub">employees</div></div>
         <div class="kpi red"><div class="kpi-label" id="kpi-label-e2">Left &lt;17:00</div><div class="kpi-val" id="k-b1700">—</div><div class="kpi-sub" id="k-b1700-sub">employees</div></div>
-        <div class="kpi red"><div class="kpi-label">Zero Entry (Month)</div><div class="kpi-val" id="k-absent">—</div><div class="kpi-sub" id="k-absent-sub">employees</div></div>
+        <div class="kpi red" onclick="switchTab('absent')" style="cursor:pointer" title="Click to view full Absenteeism (ABS) Report"><div class="kpi-label">Zero Entry (Month) <span style="font-size:10px;opacity:0.8">📊 Report →</span></div><div class="kpi-val" id="k-absent">—</div><div class="kpi-sub" id="k-absent-sub">employees</div></div>
       </div>
 
       <!-- Tabs -->
       <div>
         <div class="tabs-wrap">
           <button class="tab active" onclick="switchTab('employees')">👥 Employees</button>
+          <button class="tab" onclick="switchTab('absent')">📊 ABS Report</button>
           <button class="tab" onclick="switchTab('summary')">🏢 Wing Summary</button>
           <button class="tab" onclick="switchTab('hours')">⏱ Hours Analysis</button>
           <button class="tab" onclick="switchTab('holidays')">📅 Holidays</button>
@@ -503,6 +516,67 @@ tbody tr.clickable{cursor:pointer}
                   </tr>
                 </thead>
                 <tbody id="emp-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABSENT (ABS) REPORT TAB -->
+        <div id="view-absent" class="view" style="margin-top:14px">
+          <div class="section-header">
+            <span class="section-title">📊 Absenteeism (ABS) Report — Whole Month</span>
+            <span class="emp-count-badge" id="abs-count-badge">— absent employees</span>
+            <div style="flex:1"></div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <button class="tb-btn" id="abs-filter-all" onclick="setAbsFilter('all')" style="border-color:var(--accent);color:var(--accent);font-weight:600">All Absent (&gt;0d)</button>
+              <button class="tb-btn" id="abs-filter-zero" onclick="setAbsFilter('zero')">Full Month Zero Entry</button>
+              <button class="tb-btn" id="abs-filter-high" onclick="setAbsFilter('high')">High Absent (&ge;8d)</button>
+              <button class="tb-btn" id="abs-filter-moderate" onclick="setAbsFilter('moderate')">Moderate (1&ndash;7d)</button>
+              <button class="tb-btn green" onclick="exportAbsentReport()">⬇ Export ABS Report</button>
+            </div>
+          </div>
+
+          <!-- Mini KPI row for Absent Report -->
+          <div class="kpi-row" style="margin-bottom:14px">
+            <div class="kpi red" style="flex:1">
+              <div class="kpi-label">Total Absent Staff (Month)</div>
+              <div class="kpi-val" id="rep-abs-total">—</div>
+              <div class="kpi-sub" id="rep-abs-total-sub">with at least 1 day absent</div>
+            </div>
+            <div class="kpi red" style="flex:1">
+              <div class="kpi-label">Zero Entry (Whole Month)</div>
+              <div class="kpi-val" id="rep-abs-zero">—</div>
+              <div class="kpi-sub">absent on all working days</div>
+            </div>
+            <div class="kpi amber" style="flex:1">
+              <div class="kpi-label">High Absenteeism</div>
+              <div class="kpi-val" id="rep-abs-high">—</div>
+              <div class="kpi-sub">absent &ge; <span id="rep-cfg-high">8</span> days</div>
+            </div>
+            <div class="kpi teal" style="flex:1">
+              <div class="kpi-label">Total Absent Man-Days</div>
+              <div class="kpi-val" id="rep-abs-mandays">—</div>
+              <div class="kpi-sub">cumulative absent days</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Designation</th>
+                    <th>Wing / Division</th>
+                    <th>Working Days</th>
+                    <th>Absent Days (Month)</th>
+                    <th>Present</th>
+                    <th>Absence %</th>
+                    <th>Absent Dates in Month</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="abs-tbody"></tbody>
               </table>
             </div>
           </div>
@@ -877,9 +951,11 @@ function applyFilters() {
     if(e.s.hrs<hmin||e.s.hrs>hmax) return false;
     if(e.s.absent<abmin) return false;
     if(activeCriteria==='absent'&&e.s.absent!==e.s.wd) return false;
+    if(activeCriteria==='anyabs'&&e.s.absent===0) return false;
     if(activeCriteria==='late'&&e.s.late===0) return false;
     if(activeCriteria==='b1730'&&e.s.eb1730===0) return false;
     if(activeAnalysisView==='ontime'&&e.s.onTime===0) return false;
+    if(activeAnalysisView==='absview'&&e.s.absent===0) return false;
     if(activeAnalysisView==='lateview'){
       const wantIn  = !!CFG.lateTime;
       const wantOut = !!CFG.lateOut;
@@ -916,15 +992,20 @@ function applyFilters() {
 
   // Update criteria counts
   document.getElementById('cnt-absent').textContent=DATA.emps.filter(e=>e.s.absent===e.s.wd).length;
+  const cntAnyAbs=document.getElementById('cnt-anyabs');
+  if(cntAnyAbs) cntAnyAbs.textContent=DATA.emps.filter(e=>e.s.absent>0).length;
   document.getElementById('cnt-late').textContent=DATA.emps.filter(e=>e.s.late>0).length;
   document.getElementById('cnt-b1730').textContent=DATA.emps.filter(e=>e.s.eb1730>0).length;
   document.getElementById('cnt-ontime').textContent=DATA.emps.filter(e=>e.s.onTime>0).length;
   document.getElementById('cnt-lateview').textContent=DATA.emps.filter(e=>e.s.late>0).length;
+  const cntAbsView=document.getElementById('cnt-absview');
+  if(cntAbsView) cntAbsView.textContent=DATA.emps.filter(e=>e.s.absent>0).length;
 
   renderKPIs();
   renderEmpTable();
   renderWingSummary();
   renderHrsTable();
+  renderAbsentReport();
 }
 
 function toggleCriteria(c){
@@ -936,12 +1017,14 @@ function toggleCriteria(c){
 
 function toggleAnalysisView(v){
   activeAnalysisView = (activeAnalysisView===v) ? null : v;
-  ['ontime','lateview'].forEach(k=>{
+  ['ontime','lateview','absview'].forEach(k=>{
     const btn=document.getElementById('cb-'+k);
     if(btn) btn.classList.toggle('active', activeAnalysisView===k);
   });
   document.getElementById('av-ontime-params').style.display = activeAnalysisView==='ontime'  ? '' : 'none';
   document.getElementById('av-late-params').style.display   = activeAnalysisView==='lateview'? '' : 'none';
+  const avAbs=document.getElementById('av-abs-params');
+  if(avAbs) avAbs.style.display = activeAnalysisView==='absview' ? '' : 'none';
   updateAnalysisView();
 }
 
@@ -959,6 +1042,8 @@ function updateAnalysisView(){
     const tot = DATA.emps.length;
     document.getElementById('cnt-ontime').textContent   = DATA.emps.filter(e=>e.s.onTime>0).length;
     document.getElementById('cnt-lateview').textContent = DATA.emps.filter(e=>e.s.late>0).length;
+    const cntAbsView=document.getElementById('cnt-absview');
+    if(cntAbsView) cntAbsView.textContent = DATA.emps.filter(e=>e.s.absent>0).length;
   }
   applyFilters();
 }
@@ -970,9 +1055,11 @@ function resetFilters(){
   document.getElementById('sort-by').value='name';
   activeCriteria=null;
   activeAnalysisView=null;
-  ['ontime','lateview'].forEach(k=>{ const b=document.getElementById('cb-'+k); if(b) b.classList.remove('active'); });
+  ['ontime','lateview','absview'].forEach(k=>{ const b=document.getElementById('cb-'+k); if(b) b.classList.remove('active'); });
   document.getElementById('av-ontime-params').style.display='none';
   document.getElementById('av-late-params').style.display='none';
+  const avAbs=document.getElementById('av-abs-params');
+  if(avAbs) avAbs.style.display='none';
   document.querySelectorAll('.criteria-btn').forEach(b=>b.classList.remove('active'));
   applyFilters();
 }
@@ -1011,6 +1098,7 @@ function renderEmpTable(){
   const tb=document.getElementById('emp-tbody');
   const isOnTime = activeAnalysisView==='ontime';
   const isLate   = activeAnalysisView==='lateview';
+  const isAbs    = activeAnalysisView==='absview';
   const hasTime  = filtered.some(e=>e._cs);
 
   // Column visibility
@@ -1039,6 +1127,8 @@ function renderEmpTable(){
   else if(isLate){
     const wantOut=!!CFG.lateOut;
     rows.sort((a,b)=>wantOut?(b.s.lateOutDays||0)-(a.s.lateOutDays||0):(b.s.late||0)-(a.s.late||0));
+  } else if(isAbs){
+    rows.sort((a,b)=>(b.s.absent||0)-(a.s.absent||0));
   }
 
   tb.innerHTML=rows.map(e=>{
@@ -1225,13 +1315,154 @@ function openModal(id){
 function closeModal(){ document.getElementById('modal').classList.remove('open'); document.body.style.overflow=''; }
 
 // ═══════════════════════════════════════════════════════════════
+//  ABSENT (ABS) REPORT
+// ═══════════════════════════════════════════════════════════════
+let absReportFilter = 'all';
+
+function setAbsFilter(f){
+  absReportFilter = f;
+  ['all','zero','high','moderate'].forEach(k=>{
+    const btn = document.getElementById('abs-filter-'+k);
+    if(btn){
+      if(k === f){
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'var(--accent)';
+        btn.style.fontWeight = '600';
+      } else {
+        btn.style.borderColor = 'currentColor';
+        btn.style.color = '';
+        btn.style.fontWeight = '400';
+      }
+    }
+  });
+  renderAbsentReport();
+}
+
+function renderAbsentReport(){
+  if(!DATA) return;
+  const emps = DATA.emps || [];
+
+  const absentEmps    = emps.filter(e => e.s.absent > 0);
+  const zeroEntryEmps = emps.filter(e => e.s.absent === e.s.wd);
+  const highAbsentEmps= emps.filter(e => e.s.absent >= CFG.highAbsent);
+  const totalMandays  = emps.reduce((acc, e) => acc + (e.s.absent || 0), 0);
+
+  const kTot = document.getElementById('rep-abs-total');
+  if(kTot) kTot.textContent = absentEmps.length;
+  const kTotSub = document.getElementById('rep-abs-total-sub');
+  if(kTotSub) kTotSub.textContent = `of ${emps.length} total staff (${((absentEmps.length/emps.length)*100).toFixed(1)}%)`;
+
+  const kZero = document.getElementById('rep-abs-zero');
+  if(kZero) kZero.textContent = zeroEntryEmps.length;
+
+  const kHigh = document.getElementById('rep-abs-high');
+  if(kHigh) kHigh.textContent = highAbsentEmps.length;
+  const kCfgHigh = document.getElementById('rep-cfg-high');
+  if(kCfgHigh) kCfgHigh.textContent = CFG.highAbsent;
+
+  const kMandays = document.getElementById('rep-abs-mandays');
+  if(kMandays) kMandays.textContent = totalMandays;
+
+  const badge = document.getElementById('abs-count-badge');
+  if(badge) badge.textContent = `${absentEmps.length} staff had absences in ${DATA.month}`;
+
+  let list = absentEmps;
+  if(absReportFilter === 'zero') list = zeroEntryEmps;
+  else if(absReportFilter === 'high') list = highAbsentEmps;
+  else if(absReportFilter === 'moderate') list = emps.filter(e => e.s.absent > 0 && e.s.absent < CFG.highAbsent);
+
+  list.sort((a,b) => (b.s.absent - a.s.absent) || a.n.localeCompare(b.n));
+
+  const tb = document.getElementById('abs-tbody');
+  if(!tb) return;
+
+  if(!list.length){
+    tb.innerHTML = `<tr><td colspan="9" class="no-data"><div class="nd-icon">✅</div>No absent employees found for this filter</td></tr>`;
+    return;
+  }
+
+  const { m, y } = getMonthYear();
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1] || 'Day';
+
+  tb.innerHTML = list.map(e => {
+    const abDays = e.days.filter(d => !HOLIDAYS_SET.has(d[0]) && !d[1] && !d[2]).map(d => d[0]);
+    const abDatesStr = abDays.length === e.s.wd 
+      ? '<span style="color:var(--red);font-weight:600">All working days (Full Month Absent)</span>'
+      : abDays.map(d => `<span style="display:inline-block;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);border-radius:3px;padding:0 5px;margin:1px;font-family:var(--mono);font-size:10px">${d} ${mn}</span>`).join(' ');
+
+    const pct = ((e.s.absent / e.s.wd) * 100).toFixed(0);
+    const isZero = e.s.absent === e.s.wd;
+    const isHigh = e.s.absent >= CFG.highAbsent;
+    const statusTag = isZero 
+      ? '<span class="tag tag-red" style="font-weight:700">Zero Entry (Month)</span>'
+      : (isHigh ? '<span class="tag tag-red">High Absent</span>' : '<span class="tag tag-amber">Partial Absent</span>');
+
+    return `<tr class="clickable" onclick="openModal('${e.id}')">
+      <td><span style="font-weight:600">${e.n.split(' (')[0]}</span><br><span style="color:var(--muted);font-size:10px;font-family:var(--mono)">${e.id}</span></td>
+      <td style="color:var(--muted);font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis">${e.dg}</td>
+      <td style="color:var(--muted);font-size:11px">${e.dv}</td>
+      <td style="font-family:var(--mono)">${e.s.wd}</td>
+      <td><span style="color:var(--red);font-weight:700;font-size:14px;font-family:var(--mono)">${e.s.absent}</span></td>
+      <td><span style="color:var(--green);font-weight:600;font-family:var(--mono)">${e.s.present}</span></td>
+      <td>
+        <div class="bar-cell" style="min-width:70px">
+          <div class="bar-bg"><div class="bar-fg" style="width:${pct}%;background:var(--red)"></div></div>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600">${pct}%</span>
+        </div>
+      </td>
+      <td style="max-width:320px;line-height:1.6">${abDatesStr}</td>
+      <td>${statusTag}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportAbsentReport(){
+  if(!DATA) return;
+  const month = (DATA.month || 'data').replace(' ', '_');
+  const { m, y } = getMonthYear();
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1] || 'Day';
+  
+  const hdr = ['Att.ID','Name','Designation','Wing/Division','Working Days','Absent Days (Month)','Present Days','Absence %','Status','Absent Dates'];
+  
+  let list = DATA.emps.filter(e => e.s.absent > 0);
+  if(absReportFilter === 'zero') list = DATA.emps.filter(e => e.s.absent === e.s.wd);
+  else if(absReportFilter === 'high') list = DATA.emps.filter(e => e.s.absent >= CFG.highAbsent);
+  else if(absReportFilter === 'moderate') list = DATA.emps.filter(e => e.s.absent > 0 && e.s.absent < CFG.highAbsent);
+  
+  list.sort((a,b) => (b.s.absent - a.s.absent) || a.n.localeCompare(b.n));
+
+  const rows = [hdr, ...list.map(e => {
+    const abDays = e.days.filter(d => !HOLIDAYS_SET.has(d[0]) && !d[1] && !d[2]).map(d => `${d}-${mn}`);
+    const status = e.s.absent === e.s.wd ? 'Zero Entry (Whole Month)' : (e.s.absent >= CFG.highAbsent ? 'High Absent' : 'Partial Absent');
+    const pct = ((e.s.absent / e.s.wd) * 100).toFixed(1) + '%';
+    return [
+      e.id,
+      e.n,
+      e.dg,
+      e.dv,
+      e.s.wd,
+      e.s.absent,
+      e.s.present,
+      pct,
+      status,
+      abDays.join('; ')
+    ];
+  })];
+  
+  csvDownload(toCSV(rows), `AEBAS_Absent_Report_${absReportFilter}_${month}.csv`);
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ═══════════════════════════════════════════════════════════════
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.querySelector(`[onclick="switchTab('${t}')"]`).classList.add('active');
-  document.getElementById('view-'+t).classList.add('active');
+  const btn = document.querySelector(`[onclick="switchTab('${t}')"]`);
+  if(btn) btn.classList.add('active');
+  const view = document.getElementById('view-'+t);
+  if(view) view.classList.add('active');
+  if(t==='absent') renderAbsentReport();
 }
 
 // ═══════════════════════════════════════════════════════════════
